@@ -5,10 +5,11 @@ for [OpenVPN Cloud](https://openvpn.net/) service connections.
 ```bash
 Use: openvpn3-client.sh [option]
 Options:
-     --install		- If this is the first use of this script
-     --connect   	- To connect to VPN
-     --status		- Check if you are connected to VPN
-     --disconnect 	- To disconnect from the VPN
+    --install		- If this is the first use of this script
+    --connect   	- To connect to VPN
+    --status		- Check if you are connected to VPN
+    --statistics	- Getting tunnel statistics For already running tunnels
+    --disconnect 	- To disconnect from the VPN
 [*]  Do not run with 'sudo' or as 'root'.
 [**] Use this script only on APT-based systems.
 ```
