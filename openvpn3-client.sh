@@ -33,7 +33,7 @@ function install() {
 	[[ $(which openvpn3) ]] && echo -e "Program 'openvpn3' is already installed!\n" && _help
 
 	DISTRO=$(/usr/bin/lsb_release -c | awk '{ print $2 }') # Release name
-	[[ $DISTRO == "una" ]] && DISTRO="focal" || [[ $DISTRO == "vanessa" ]] && DISTRO="jammy"
+	[[ $DISTRO == "una" ]] && DISTRO="focal" || [[ $DISTRO == "vanessa" ]] && DISTRO="jammy" # for linux mint version 20 and 22
 	sudo apt update && sudo apt install apt-transport-https -y
 	wget https://swupdate.openvpn.net/repos/openvpn-repo-pkg-key.pub
 	sudo apt-key add openvpn-repo-pkg-key.pub
