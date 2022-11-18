@@ -13,10 +13,11 @@ _help() {
 	cat <<EOF
 Use: ${0##*/} [option]
 Options:
-     --install		- If this is the first use of this script
-     --connect   	- To connect to VPN
-     --status		- Check if you are connected to VPN
-     --disconnect 	- To disconnect from the VPN
+    --install		- If this is the first use of this script
+    --connect   	- To connect to VPN
+    --status		- Check if you are connected to VPN
+    --statistics	- Getting tunnel statistics For already running tunnels
+    --disconnect 	- To disconnect from the VPN
 [*]  Do not run with 'sudo' or as 'root'.
 [**] Use this script only on APT-based systems.
 EOF
@@ -55,8 +56,15 @@ function connect() {
 	openvpn3 session-start -p $(openvpn3 configs-list | grep "/net/openvpn/v3/configuration/")
 }
 
+function statistics() {
+	SESSION=$(openvpn3 sessions-list | grep "/net/openvpn/v3/sessions/" | awk '{ print $2 }')
+	[[ -z $SESSION ]] && echo -e "No sessions available.\n" && _help
+	openvpn3 session-stats --path $SESSION
+}
+
 function disconnect() {
 	SESSION=$(openvpn3 sessions-list | grep "/net/openvpn/v3/sessions/" | awk '{ print $2 }')
+	[[ -z $SESSION ]] && echo -e "No sessions available.\n" && _help
 	echo -e "wait to disconnect..."
 	openvpn3 session-manage --path $SESSION --disconnect
 	sleep 5
@@ -69,6 +77,7 @@ while [[ "$1" ]]; do
 	--install) install ;;
 	--connect) connect ;;
 	--status) status ;;
+	--statistics) statistics ;;
 	--disconnect) disconnect ;;
 	*) echo -e "Invalid option\n" && _help ;;
 	esac
