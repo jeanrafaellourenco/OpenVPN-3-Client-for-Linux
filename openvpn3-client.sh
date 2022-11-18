@@ -1,7 +1,7 @@
 #!/bin/bash
 #######################################################################
 # Script Name: openvpn3-client.sh
-# Description: script para conexão VPN openvpn cloud usando openvpn3
+# Description: script for openvpn cloud VPN connection using openvpn3
 # Author: https://github.com/jeanrafaellourenco
 # Date: 14/06/2021
 # Dependencies: apt-transport-https, openvpn3
@@ -11,14 +11,14 @@
 
 _help() {
 	cat <<EOF
-Use: ${0##*/} [opção]
-Opções:
-     --instalar		- Se esse for o primeiro uso desse script
-     --conectar   	- Para se conectar a VPN
-     --status		- Verifica se está conectado a VPN
-     --desconectar - Para se desconectar da VPN
-[*]  Não execute com 'sudo' ou como 'root'.
-[**] Use este script apenas em sistemas APT-based.
+Use: ${0##*/} [option]
+Options:
+     --install		- If this is the first use of this script
+     --connect   	- To connect to VPN
+     --status		- Check if you are connected to VPN
+     --disconnect - To disconnect from the VPN
+[*]  Do not run with 'sudo' or as 'root'.
+[**] Use this script only on APT-based systems.
 EOF
 	exit 0
 }
@@ -27,9 +27,9 @@ EOF
 [[ -z "$1" ]] && _help
 [[ ! $(which apt) ]] && _help | tail -n 1 && exit 1
 
-function instalar() {
-	[[ ! $(find ~/*.ovpn 2>/dev/null) ]] && echo -e "Nenhum arquivo .ovpn encontrado em: $HOME" && exit 1 # verifica se existe um arquivo .ovpn da home do usuário.
-	[[ $(which openvpn3) ]] && echo -e "Programa 'openvpn3' já está instalado!\n" && _help
+function install() {
+	[[ ! $(find ~/*.ovpn 2>/dev/null) ]] && echo -e "No *.ovpn files found in: $HOME" && exit 1 # check if there is an .ovpn file of the user's home.
+	[[ $(which openvpn3) ]] && echo -e "Program 'openvpn3' is already installed!\n" && _help
 
 	DISTRO=$(/usr/bin/lsb_release -c | awk '{ print $2 }') # Release name
 	[[ $DISTRO == "una" ]] && DISTRO="focal" || [[ $DISTRO == "vanessa" ]] && DISTRO="jammy"
@@ -39,8 +39,8 @@ function instalar() {
 	sudo wget -O /etc/apt/sources.list.d/openvpn3.list https://swupdate.openvpn.net/community/openvpn3/repos/openvpn3-$DISTRO.list
 	sudo apt update
 	sudo apt install openvpn3 -y
-	# importa um arquivo .ovpn da home do usuário.
-	[[ ! $(find ~/*.ovpn 2>/dev/null) ]] && echo -e "Nenhum arquivo .ovpn encontrado em: $HOME" && exit 1 || openvpn3 config-import --persistent --config ~/*.ovpn
+	# imports a .ovpn file from the user's home.
+	[[ ! $(find ~/*.ovpn 2>/dev/null) ]] && echo -e "No *.ovpn files found in: $HOME" && exit 1 || openvpn3 config-import --persistent --config ~/*.ovpn
 
 }
 
@@ -48,37 +48,29 @@ function status() {
 	openvpn3 sessions-list
 }
 
-function conectar() {
-	
-	# setar dominio de interfaces de rede no momento de conectar (corrigindo erros de conexão com o openvpn cloud)
-	
-	# Todas as interfaces
-	ip -br link | awk '{print $1}' | grep -E -i "(^wl*|^en*|^et*)" | while read line; do  sudo systemd-resolve --interface $line --set-domain ""; done
-	
-	# Verificando os dominios
-	# resolvectl domain
-	
-	echo -e "\nAguarde a conexão no navegador!"
-	[[ $(pidof openvpn3-service-client) ]] && echo -e "Já existe uma conexão aberta, teste se desconectar primeiro.\n" && _help
+function connect() {
+	SESSION=$(openvpn3 sessions-list | grep "/net/openvpn/v3/sessions/" | awk '{ print $2 }')
+	[[ -n $SESSION ]] && echo -e "There is already an open connection, try disconnecting first.\n" && _help
+	echo -e "Wait for connection..."
 	openvpn3 session-start -p $(openvpn3 configs-list | grep "/net/openvpn/v3/configuration/")
 }
 
-function desconectar() {
-	[[ ! $(pidof openvpn3-service-client) ]] && echo -e "Nenhuma conexão foi encontrada!" && exit 1
-	sudo pkill -9 openvpn3*
-	echo -e "Aguarde..."
+function disconnect() {
+	SESSION=$(openvpn3 sessions-list | grep "/net/openvpn/v3/sessions/" | awk '{ print $2 }')
+	echo -e "wait to disconnect..."
+	openvpn3 session-manage --path $SESSION --disconnect
 	sleep 5
-	echo -e "\nDesconectado!"
+	echo -e "\nDisconnected!"
 	status
 }
 
 while [[ "$1" ]]; do
 	case "$1" in
-	--instalar) instalar ;;
-	--conectar) conectar ;;
+	--install) install ;;
+	--connect) connect ;;
 	--status) status ;;
-	--desconectar) desconectar ;;
-	*) echo -e "Opção inválida\n" && _help ;;
+	--disconnect) disconnect ;;
+	*) echo -e "Invalid option\n" && _help ;;
 	esac
 	shift
 done
